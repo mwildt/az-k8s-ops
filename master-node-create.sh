@@ -34,8 +34,12 @@ mkdir -p .logs
 
 RESOURCE_GROUP_NAME="$CLUSTER_NAME-RG"
 
-az group show --name $RESOURCE_GROUP_NAME > /dev/null
+SSHDIR=./.ssh
+mkdir -p $SSHDIR
+
 echo "check resource group $RESOURCE_GROUP_NAME"
+az group show --name $RESOURCE_GROUP_NAME > /dev/null
+
 # falls nicht -> rg wird angeleget.
 if [ $? -ne 0 ]; then
     echo "create resource group with name $RESOURCE_GROUP_NAME"
@@ -66,8 +70,7 @@ fi
 #
 # Erzeugen ssh Key
 #
-SSHDIR=./.ssh
-mkdir -p $SSHDIR
+
 KEY_NAME=${SSHDIR}/${RESOURCE_GROUP_NAME}_id_rsa
 echo "Ssh-Key can be found here : $KEY_NAME" | tee -a .logs/deploy.$CLUSTER_NAME.json
 # generate new ssh key
@@ -99,16 +102,16 @@ if [ $? -ne 0 ]; then
     exit $?
 fi 
 
-PUBLIC_IP=$(az vm show -d -g mw-ops-cluster-RG -n mw-ops-cluster-vm-master --query publicIps -o tsv)
-SSH_BASE="ssh -i ./${SSHDIR}/${RESOURCE_GROUP_NAME}_id_rsa $CLUSTER_NAME-admin@$PUBLIC_IP"
+PUBLIC_IP=$(az vm show -d -g ${RESOURCE_GROUP_NAME} -n ${CLUSTER_NAME}-vm-master --query publicIps -o tsv)
+SSH_BASE="ssh -i ${SSHDIR}/${RESOURCE_GROUP_NAME}_id_rsa $CLUSTER_NAME-admin@$PUBLIC_IP"
 echo "vm is ready, run following to connect:"
 echo $SSH_BASE
 
 
 echo "use following commmands to configure the kubernetes-cluster:"
 echo "1) Configure an Mount data Disks"
-echo "$SSH_BASE bash -s -- < ./scripts/disc-config 0 /data"
+echo "$SSH_BASE sudo bash -s -- < ./scripts/disc-config.sh 0 /data"
 echo "2) Install Kubernetes Componentes"
-echo "$SSH_BASE bash -s -- < ./scripts/kube-config.sh"
+echo "$SSH_BASE sudo bash -s -- < ./scripts/kube-config.sh"
 echo "3) Initialize and Confgure Kubernetes-Master-Node"
 echo "$SSH_BASE sudo kubeadm init --apiserver-cert-extra-sans $PUBLIC_IP --pod-network-cidr=192.168.0.0/16"
