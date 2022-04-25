@@ -1,0 +1,64 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "clusterName": {
+            "type": "string"
+        },
+        "rgName": {
+            "type": "string"
+        },
+        "location": {
+            "type": "string",
+            "defaultValue": "germanywestcentral"
+        },
+        "subnetName": {
+            "type": "string",
+            "defaultValue": "default"
+        },
+        "virtualNetworkName": {
+            "type": "string",
+            "defaultValue": "[concat(parameters('clusterName'), '-vnet0')]"
+        },
+        "addressPrefixes": {
+            "type": "array",
+            "defaultValue": [
+                "10.4.0.0/16"
+            ]
+        },
+        "subnets": {
+            "type": "array",
+            "defaultValue": [
+                {
+                    "name": "default",
+                    "properties": {
+                        "addressPrefix": "10.4.0.0/24"
+                    }
+                }
+            ]
+        },
+        "tags": {
+            "type": "object",
+            "defaultValue": {
+                "ersteller": "malte",
+                "cluster": "[parameters('clusterName')]"
+            }
+        }
+    },
+    "resources": [
+        {
+            "name": "[parameters('virtualNetworkName')]",
+            "type": "Microsoft.Network/virtualNetworks",
+            "apiVersion": "2020-11-01",
+            "location": "[parameters('location')]",
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": "[parameters('addressPrefixes')]"
+                },
+                "subnets": "[parameters('subnets')]"
+            },
+            "tags": "[parameters('tags')]"
+        }
+    ]
+}
+

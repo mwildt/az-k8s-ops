@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nb-sample-deployment
+  labels:
+    app: nb-sample
+spec:
+  selector:
+    matchLabels:
+      app: nb-sample
+  replicas: 3
+  template:
+    metadata:
+      labels:
+        app: nb-sample
+    spec:
+      containers:
+      - name: nb-sample-http
+        image: maltewildt/nb-sample:sample-golang-app
+        ports:
+          - containerPort: 3000
+        env:
+          - name: "SERVICE_HOST"
+            value: ":3000"
+          - name: "SERVICE_MODE"
+            value: "HTTP"
+      - name: nb-sample-tcp
+        image: maltewildt/nb-sample:sample-golang-app
+        env:
+          - name: "SERVICE_MODE"
+            value: "TCP"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nb-sample-service
+spec:
+  selector:
+    app: nb-sample
+  ports:
+  - name: dashboard
+    port: 3000
+    targetPort: 3000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nb-samle-ingress
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websec
+    traefik.ingress.kubernetes.io/router.tls.certresolver: letsenc
+    traefik.ingress.kubernetes.io/router.tls: "true"
+spec:
+  rules:
+  - host: sample-app.k9s.ohrenpirat.de
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: nb-sample-service
+            port:
+              number: 3000
